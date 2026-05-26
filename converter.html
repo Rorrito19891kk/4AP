@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Conversor BRL → CLP</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  :root{
+    --bg:#07080f;
+    --surface:#141720;
+    --surface2:#1c2028;
+    --border:rgba(0,220,130,.15);
+    --border-h:rgba(0,220,130,.45);
+    --green:#00dc82;
+    --green2:#00b469;
+    --yellow:#ffd060;
+    --text:#ecedf6;
+    --text2:#8a8d9b;
+    --radius:20px;
+    --shadow:0 24px 80px rgba(0,0,0,.7);
+  }
+
+  body{
+    font-family:'Segoe UI',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%,rgba(0,220,130,.08),transparent),
+      radial-gradient(ellipse 60% 40% at 90% 110%,rgba(0,180,105,.06),transparent);
+  }
+
+  .card{
+    width:100%;
+    max-width:480px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:40px 36px;
+    box-shadow:var(--shadow);
+    position:relative;
+    overflow:hidden;
+  }
+
+  .card::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(135deg,rgba(0,220,130,.04) 0%,transparent 60%);
+    pointer-events:none;
+  }
+
+  .header{
+    text-align:center;
+    margin-bottom:36px;
+  }
+
+  .flags{
+    font-size:40px;
+    letter-spacing:4px;
+    margin-bottom:12px;
+  }
+
+  h1{
+    font-size:1.5rem;
+    font-weight:700;
+    background:linear-gradient(90deg,var(--green),#00f5c3);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    margin-bottom:4px;
+  }
+
+  .subtitle{
+    font-size:.85rem;
+    color:var(--text2);
+  }
+
+  .rate-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(0,220,130,.08);
+    border:1px solid rgba(0,220,130,.2);
+    border-radius:100px;
+    padding:6px 14px;
+    font-size:.8rem;
+    color:var(--green);
+    margin-top:12px;
+    cursor:pointer;
+    transition:background .2s,border-color .2s;
+  }
+
+  .rate-badge:hover{
+    background:rgba(0,220,130,.14);
+    border-color:rgba(0,220,130,.4);
+  }
+
+  .rate-badge .dot{
+    width:7px;height:7px;
+    border-radius:50%;
+    background:var(--green);
+    animation:pulse 2s infinite;
+  }
+
+  @keyframes pulse{
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.4;transform:scale(.8)}
+  }
+
+  .rate-badge.loading .dot{
+    animation:none;
+    opacity:.4;
+  }
+
+  .fields{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  .field-group{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  label{
+    font-size:.78rem;
+    font-weight:600;
+    color:var(--text2);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  .currency-flag{
+    font-size:1em;
+  }
+
+  .input-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+  }
+
+  .currency-tag{
+    position:absolute;
+    left:16px;
+    font-size:.95rem;
+    font-weight:700;
+    color:var(--text2);
+    pointer-events:none;
+    user-select:none;
+  }
+
+  input[type="number"]{
+    width:100%;
+    background:var(--surface2);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    padding:16px 16px 16px 68px;
+    font-size:1.4rem;
+    font-weight:600;
+    color:var(--text);
+    outline:none;
+    transition:border-color .2s,box-shadow .2s;
+    -moz-appearance:textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+  }
+
+  input[type="number"]:focus{
+    border-color:var(--border-h);
+    box-shadow:0 0 0 3px rgba(0,220,130,.1);
+  }
+
+  input[type="number"].result-field{
+    background:rgba(0,220,130,.05);
+    border-color:rgba(0,220,130,.18);
+    color:var(--green);
+    cursor:default;
+  }
+
+  .swap-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,220,130,.08);
+    border:1px solid rgba(0,220,130,.2);
+    border-radius:50%;
+    width:44px;height:44px;
+    cursor:pointer;
+    font-size:1.2rem;
+    color:var(--green);
+    transition:all .2s;
+    align-self:center;
+    flex-shrink:0;
+  }
+
+  .swap-btn:hover{
+    background:rgba(0,220,130,.18);
+    border-color:var(--green);
+    transform:rotate(180deg);
+  }
+
+  .divider{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .breakdown{
+    margin-top:24px;
+    background:var(--surface2);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:14px;
+    padding:18px 20px;
+    display:none;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .breakdown.visible{
+    display:flex;
+  }
+
+  .breakdown-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:.85rem;
+  }
+
+  .breakdown-row .label{
+    color:var(--text2);
+  }
+
+  .breakdown-row .value{
+    font-weight:600;
+    color:var(--text);
+  }
+
+  .breakdown-row .value.highlight{
+    color:var(--green);
+    font-size:1rem;
+  }
+
+  .breakdown-sep{
+    height:1px;
+    background:rgba(255,255,255,.06);
+  }
+
+  .updated{
+    text-align:center;
+    font-size:.75rem;
+    color:var(--text2);
+    margin-top:20px;
+  }
+
+  .updated span{
+    color:var(--green);
+  }
+
+  .error-msg{
+    text-align:center;
+    font-size:.8rem;
+    color:#ff6b6b;
+    margin-top:16px;
+    display:none;
+  }
+
+  .error-msg.visible{
+    display:block;
+  }
+
+  @media(max-width:480px){
+    .card{padding:32px 24px}
+    input[type="number"]{font-size:1.2rem}
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="flags">🇧🇷 → 🇨🇱</div>
+    <h1>Conversor BRL / CLP</h1>
+    <p class="subtitle">Reales brasileños a pesos chilenos</p>
+    <div class="rate-badge loading" id="rateBadge" title="Haz clic para actualizar el tipo de cambio">
+      <span class="dot"></span>
+      <span id="rateLabel">Cargando tasa...</span>
+    </div>
+  </div>
+
+  <div class="fields">
+    <div class="field-group">
+      <label><span class="currency-flag">🇧🇷</span> Reales brasileños (BRL)</label>
+      <div class="input-wrap">
+        <span class="currency-tag">R$</span>
+        <input type="number" id="brl" placeholder="0.00" min="0" step="any"/>
+      </div>
+    </div>
+
+    <div class="divider">
+      <button class="swap-btn" id="swapBtn" title="Invertir conversión">⇅</button>
+    </div>
+
+    <div class="field-group">
+      <label><span class="currency-flag">🇨🇱</span> Pesos chilenos (CLP)</label>
+      <div class="input-wrap">
+        <span class="currency-tag">$</span>
+        <input type="number" id="clp" placeholder="0" min="0" step="any" class="result-field"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="breakdown" id="breakdown">
+    <div class="breakdown-row">
+      <span class="label">Monto en BRL</span>
+      <span class="value" id="bBreakBrl">—</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="label">Tipo de cambio</span>
+      <span class="value" id="bBreakRate">—</span>
+    </div>
+    <div class="breakdown-sep"></div>
+    <div class="breakdown-row">
+      <span class="label">Total en CLP</span>
+      <span class="value highlight" id="bBreakClp">—</span>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg">
+    No se pudo obtener la tasa de cambio. Usando tasa de respaldo.
+  </div>
+
+  <p class="updated" id="updatedAt" style="display:none">
+    Tasa actualizada: <span id="updatedTime">—</span>
+  </p>
+</div>
+
+<script>
+  const FALLBACK_RATE = 85; // CLP per 1 BRL (approximate fallback)
+
+  let rate = null;
+  let mode = 'brl'; // 'brl' = input BRL → output CLP ; 'clp' = input CLP → output BRL
+
+  const brlInput  = document.getElementById('brl');
+  const clpInput  = document.getElementById('clp');
+  const rateBadge = document.getElementById('rateBadge');
+  const rateLabel = document.getElementById('rateLabel');
+  const breakdown = document.getElementById('breakdown');
+  const bBreakBrl = document.getElementById('bBreakBrl');
+  const bBreakRate= document.getElementById('bBreakRate');
+  const bBreakClp = document.getElementById('bBreakClp');
+  const errorMsg  = document.getElementById('errorMsg');
+  const updatedAt = document.getElementById('updatedAt');
+  const updatedTime=document.getElementById('updatedTime');
+  const swapBtn   = document.getElementById('swapBtn');
+
+  function fmt(n, decimals=2){
+    return new Intl.NumberFormat('es-CL',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}).format(n);
+  }
+
+  function fmtClp(n){
+    return new Intl.NumberFormat('es-CL',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.round(n));
+  }
+
+  function updateRateBadge(){
+    if(!rate) return;
+    rateLabel.textContent = `1 BRL = ${fmt(rate)} CLP`;
+    rateBadge.classList.remove('loading');
+  }
+
+  async function fetchRate(){
+    rateBadge.classList.add('loading');
+    rateLabel.textContent = 'Cargando tasa...';
+    try{
+      const res = await fetch('https://open.er-api.com/v6/latest/BRL');
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      if(data.result !== 'success') throw new Error('API error');
+      rate = data.rates['CLP'];
+      if(!rate) throw new Error('CLP not found');
+      updateRateBadge();
+      errorMsg.classList.remove('visible');
+      const now = new Date();
+      updatedAt.style.display='block';
+      updatedTime.textContent = now.toLocaleTimeString('es-CL');
+    }catch(e){
+      rate = FALLBACK_RATE;
+      updateRateBadge();
+      errorMsg.classList.add('visible');
+      updatedAt.style.display='none';
+    }
+    recalculate();
+  }
+
+  function recalculate(){
+    if(!rate) return;
+    if(mode === 'brl'){
+      const val = parseFloat(brlInput.value);
+      if(!isNaN(val) && val >= 0){
+        const result = val * rate;
+        clpInput.value = Math.round(result);
+        showBreakdown(val, rate, result);
+      } else {
+        clpInput.value = '';
+        breakdown.classList.remove('visible');
+      }
+    } else {
+      const val = parseFloat(clpInput.value);
+      if(!isNaN(val) && val >= 0){
+        const result = val / rate;
+        brlInput.value = result.toFixed(2);
+        showBreakdown(result, rate, val);
+      } else {
+        brlInput.value = '';
+        breakdown.classList.remove('visible');
+      }
+    }
+  }
+
+  function showBreakdown(brl, r, clp){
+    bBreakBrl.textContent  = 'R$ ' + fmt(brl);
+    bBreakRate.textContent  = '× ' + fmt(r) + ' CLP/BRL';
+    bBreakClp.textContent  = '$ ' + fmtClp(clp);
+    breakdown.classList.add('visible');
+  }
+
+  function setMode(newMode){
+    mode = newMode;
+    if(mode === 'brl'){
+      brlInput.classList.remove('result-field');
+      clpInput.classList.add('result-field');
+      brlInput.readOnly = false;
+      clpInput.readOnly = true;
+    } else {
+      clpInput.classList.remove('result-field');
+      brlInput.classList.add('result-field');
+      clpInput.readOnly = false;
+      brlInput.readOnly = true;
+    }
+  }
+
+  brlInput.addEventListener('input', ()=>{
+    if(mode !== 'brl') setMode('brl');
+    recalculate();
+  });
+
+  clpInput.addEventListener('input', ()=>{
+    if(mode !== 'clp') setMode('clp');
+    recalculate();
+  });
+
+  swapBtn.addEventListener('click', ()=>{
+    const newMode = mode === 'brl' ? 'clp' : 'brl';
+    const brlVal = brlInput.value;
+    const clpVal = clpInput.value;
+    setMode(newMode);
+    if(newMode === 'clp' && clpVal){
+      clpInput.value = clpVal;
+    } else if(newMode === 'brl' && brlVal){
+      brlInput.value = brlVal;
+    }
+    recalculate();
+  });
+
+  rateBadge.addEventListener('click', fetchRate);
+
+  setMode('brl');
+  fetchRate();
+</script>
+</body>
+</html>
